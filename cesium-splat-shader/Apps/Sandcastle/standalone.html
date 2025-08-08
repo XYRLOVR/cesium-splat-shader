@@ -1,0 +1,566 @@
+﻿<!doctype html>
+<html lang="CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+  <title>Cesium照片地理标记系统 - GitHub Pages版</title>
+  
+  <!-- 使用CDN版本的Cesium，适合GitHub Pages -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.125/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.125/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+  
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #1a1a2e;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #app-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    #sidebar {
+      width: 250px;
+      background-color: #16213e;
+      padding: 15px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sidebar h2 {
+      color: #e94560;
+      margin-top: 0;
+    }
+
+    #upload-section,
+    #info-section,
+    #uploaded-photos-section {
+      background-color: #0f3460;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      flex-grow: 1;
+      overflow-y: auto;
+      max-height: 300px;
+    }
+
+    #upload-section h3,
+    #info-section h3,
+    #uploaded-photos-section h3 {
+      color: #ffffff;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    #upload-box {
+      border: 2px dashed #e94560;
+      padding: 15px;
+      text-align: center;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+
+    #upload-box button {
+      background-color: #e94560;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #upload-box button:hover {
+      background-color: #ba374d;
+    }
+
+    #main-content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #header {
+      background-color: #16213e;
+      padding: 8px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #header h1 {
+      margin: 0;
+      font-size: 20px;
+      color: #e94560;
+    }
+
+    #map-and-controls {
+      flex-grow: 1;
+      display: flex;
+    }
+
+    #controls {
+      width: 180px;
+      background-color: #0f3460;
+      padding: 15px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #controls button {
+      background-color: #e94560;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    #controls button:hover {
+      background-color: #ba374d;
+    }
+
+    #cesiumContainer {
+      flex-grow: 1;
+      position: relative;
+    }
+
+    #status-bar {
+      background-color: #16213e;
+      padding: 8px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .upload-success-message {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+
+    #fullscreen-button {
+      background-color: #e94560;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #fullscreen-button:hover {
+      background-color: #c2314b;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app-container">
+    <div id="sidebar">
+      <h2>Cesium照片地理标记系统</h2>
+      <div id="upload-section">
+        <h3>📷 上传照片</h3>
+        <div id="upload-box">
+          <p>上传带有地理位置的照片</p>
+          <p>支持JPG/PNG格式,最大5MB</p>
+          <button id="selectPhotoButton">选择照片</button>
+          <input type="file" id="photoUploadInput" accept="image/*" multiple style="display: none;" />
+        </div>
+      </div>
+      <div id="info-section">
+        <h3>⚠️ 重要提示</h3>
+        <ul style="list-style: none; padding: 0;">
+          <li>• 请确保照片包含GPS地理位置信息</li>
+          <li>• GitHub Pages版本仅支持前端功能</li>
+          <li>• 照片数据仅在浏览器本地处理</li>
+        </ul>
+      </div>
+      <div id="uploaded-photos-section">
+        <h3>📸 已上传照片</h3>
+        <ul id="photoList"></ul>
+      </div>
+    </div>
+    <div id="main-content">
+      <div id="header">
+        <h1>Cesium Photo Geotagging System (GitHub Pages)</h1>
+        <button id="fullscreen-button">全屏</button>
+      </div>
+      <div id="map-and-controls">
+        <div id="controls">
+          <button id="measureDistanceButton">📏 长度测量</button>
+          <button id="roamButton">🚶 模型漫游</button>
+          <button id="stopRoamButton">⏹️ 停止漫游</button>
+          <button id="clearMeasureButton">🧹 清除测量</button>
+        </div>
+        <div id="cesiumContainer"></div>
+      </div>
+      <div id="status-bar">
+        <div>💻 系统状态: GitHub Pages运行中</div>
+        <div>📍 位置: 南宁师范大学</div>
+        <div>🖼️ 照片总数: <span id="total-photos">0</span>张</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="uploadMessages" class="upload-success-message" style="display: none;"></div>
+
+  <script>
+    // 转换DMS坐标到十进制度数
+    function convertDMSToDD(dms, ref) {
+      if (!dms || dms.length !== 3) return NaN;
+      let degrees = dms[0].numerator / dms[0].denominator;
+      let minutes = dms[1].numerator / dms[1].denominator;
+      let seconds = dms[2].numerator / dms[2].denominator;
+      let dd = degrees + (minutes / 60) + (seconds / 3600);
+      if (ref === 'S' || ref === 'W') dd *= -1;
+      return dd;
+    }
+
+    // 显示上传消息
+    function showUploadMessage(message, isError = false) {
+      const uploadMessagesElement = document.getElementById('uploadMessages');
+      uploadMessagesElement.textContent = message;
+      uploadMessagesElement.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+      uploadMessagesElement.style.display = 'block';
+      setTimeout(() => {
+        uploadMessagesElement.style.display = 'none';
+      }, 5000);
+    }
+
+    // 初始化Cesium
+    async function initializeCesium() {
+      // 设置Cesium Ion访问令牌
+      Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNmRiN2U5Ny1kZDIwLTRkOGQtYmJmZi0xYjk0OWFlNTUxMzEiLCJpZCI6MzAzNDI0LCJpYXQiOjE3NDc1MzQxMzZ9.4AaMdNg3QTb3OeWPJ9pQKM4ARu8UGeJIwfOByXWpTlo';
+      
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        terrainProvider: Cesium.createWorldTerrain()
+      });
+
+      // 设置中国时间
+      const utcTime = Cesium.JulianDate.now();
+      const chinaTime = Cesium.JulianDate.addHours(utcTime, 8, new Cesium.JulianDate());
+      viewer.clock.currentTime = chinaTime;
+
+      // 添加天地图底图
+      try {
+        viewer.imageryLayers.addImageryProvider(
+          new Cesium.WebMapTileServiceImageryProvider({
+            url: "http://t0.tianditu.gov.cn/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=bb51ab049a80598e96bf0684ce21c526",
+            layer: "img",
+            style: "default",
+            format: "tiles",
+            tileMatrixSetID: "w",
+            maximumLevel: 18,
+          })
+        );
+      } catch (error) {
+        console.warn('天地图加载失败，使用默认底图');
+      }
+
+      // 南宁师范大学位置
+      const nnsyPosition = Cesium.Cartesian3.fromDegrees(108.2896, 22.8414, 100);
+      
+      // 添加南宁师范大学标记
+      viewer.entities.add({
+        position: nnsyPosition,
+        label: {
+          text: '南宁师范大学',
+          font: '24px sans-serif',
+          fillColor: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(0, -50)
+        },
+        point: {
+          pixelSize: 10,
+          color: Cesium.Color.YELLOW,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2
+        }
+      });
+
+      // 飞行到南宁师范大学
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(108.2896, 22.8414, 1000),
+        duration: 3.0
+      });
+
+      const uploadedPhotos = [];
+      const photoUploadInput = document.getElementById('photoUploadInput');
+      const selectPhotoButton = document.getElementById('selectPhotoButton');
+      const photoList = document.getElementById('photoList');
+      const totalPhotosSpan = document.getElementById('total-photos');
+
+      // 照片上传处理
+      selectPhotoButton.onclick = () => photoUploadInput.click();
+
+      photoUploadInput.onchange = async function (event) {
+        const files = event.target.files;
+        if (files.length === 0) return;
+
+        for (const file of files) {
+          if (file.size > 5 * 1024 * 1024) {
+            showUploadMessage(`文件 ${file.name} 超过5MB限制`, true);
+            continue;
+          }
+
+          try {
+            const exifData = await new Promise((resolve, reject) => {
+              EXIF.getData(file, function () {
+                const hasGPS = EXIF.getTag(this, 'GPSLatitude') && EXIF.getTag(this, 'GPSLongitude');
+                if (hasGPS) {
+                  resolve(this);
+                } else {
+                  reject(new Error('照片不包含地理位置信息'));
+                }
+              });
+            });
+
+            const latitude = convertDMSToDD(EXIF.getTag(exifData, 'GPSLatitude'), EXIF.getTag(exifData, 'GPSLatitudeRef'));
+            const longitude = convertDMSToDD(EXIF.getTag(exifData, 'GPSLongitude'), EXIF.getTag(exifData, 'GPSLongitudeRef'));
+            const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
+
+            const photoEntity = viewer.entities.add({
+              position: position,
+              billboard: {
+                image: URL.createObjectURL(file),
+                width: 50,
+                height: 50,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+              },
+              description: `
+                <h3>${file.name}</h3>
+                <img width="200" src="${URL.createObjectURL(file)}" />
+                <p>位置: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+              `,
+            });
+
+            uploadedPhotos.push({
+              id: photoEntity.id,
+              name: file.name,
+              entity: photoEntity,
+            });
+            
+            showUploadMessage(`照片 ${file.name} 上传成功！`);
+            updatePhotoList();
+          } catch (error) {
+            showUploadMessage(`上传照片 ${file.name} 失败: ${error.message}`, true);
+          }
+        }
+      };
+
+      function updatePhotoList() {
+        photoList.innerHTML = '';
+        uploadedPhotos.forEach(photo => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div style="margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+              <div>${photo.name}</div>
+              <button onclick="viewPhoto('${photo.id}')" style="margin: 2px; padding: 3px 8px; font-size: 12px;">查看</button>
+              <button onclick="removePhoto('${photo.id}')" style="margin: 2px; padding: 3px 8px; font-size: 12px;">删除</button>
+            </div>
+          `;
+          photoList.appendChild(li);
+        });
+        totalPhotosSpan.textContent = uploadedPhotos.length;
+      }
+
+      window.viewPhoto = function(id) {
+        const photo = uploadedPhotos.find(p => p.id === id);
+        if (photo) viewer.zoomTo(photo.entity);
+      };
+
+      window.removePhoto = function(id) {
+        const index = uploadedPhotos.findIndex(photo => photo.id === id);
+        if (index !== -1) {
+          viewer.entities.remove(uploadedPhotos[index].entity);
+          uploadedPhotos.splice(index, 1);
+          updatePhotoList();
+          showUploadMessage('照片已删除');
+        }
+      };
+
+      // 测量功能（简化版）
+      let measuring = false;
+      let measurePoints = [];
+      
+      document.getElementById('measureDistanceButton').onclick = function() {
+        measuring = !measuring;
+        if (measuring) {
+          this.textContent = '📏 点击地图测量';
+          this.style.backgroundColor = '#28a745';
+        } else {
+          this.textContent = '📏 长度测量';
+          this.style.backgroundColor = '#e94560';
+        }
+      };
+
+      viewer.cesiumWidget.canvas.addEventListener('click', function(e) {
+        if (!measuring) return;
+        
+        const pickedPosition = viewer.camera.pickEllipsoid(new Cesium.Cartesian2(e.clientX, e.clientY));
+        if (!pickedPosition) return;
+
+        measurePoints.push(pickedPosition);
+        
+        viewer.entities.add({
+          position: pickedPosition,
+          point: {
+            pixelSize: 8,
+            color: Cesium.Color.YELLOW,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 2
+          }
+        });
+
+        if (measurePoints.length === 2) {
+          const distance = Cesium.Cartesian3.distance(measurePoints[0], measurePoints[1]);
+          
+          viewer.entities.add({
+            polyline: {
+              positions: measurePoints,
+              width: 3,
+              material: Cesium.Color.YELLOW
+            }
+          });
+
+          const midpoint = Cesium.Cartesian3.midpoint(measurePoints[0], measurePoints[1], new Cesium.Cartesian3());
+          viewer.entities.add({
+            position: midpoint,
+            label: {
+              text: `${(distance / 1000).toFixed(2)} km`,
+              font: '16px sans-serif',
+              fillColor: Cesium.Color.WHITE,
+              outlineColor: Cesium.Color.BLACK,
+              outlineWidth: 2,
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE
+            }
+          });
+
+          measuring = false;
+          measurePoints = [];
+          document.getElementById('measureDistanceButton').textContent = '📏 长度测量';
+          document.getElementById('measureDistanceButton').style.backgroundColor = '#e94560';
+        }
+      });
+
+      // 漫游功能
+      let roaming = false;
+      document.getElementById('roamButton').onclick = function() {
+        if (roaming) return;
+        roaming = true;
+        
+        const center = nnsyPosition;
+        const radius = 2000;
+        const height = 500;
+        const duration = 30;
+
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(108.2896, 22.8414, height),
+          duration: 2,
+          complete: function() {
+            const startTime = viewer.clock.currentTime;
+            const stopTime = Cesium.JulianDate.addSeconds(startTime, duration, new Cesium.JulianDate());
+            
+            viewer.clock.startTime = startTime;
+            viewer.clock.stopTime = stopTime;
+            viewer.clock.currentTime = startTime;
+            viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+            viewer.clock.multiplier = 1;
+
+            const property = new Cesium.SampledPositionProperty();
+            const positions = [];
+            
+            for (let i = 0; i <= 360; i += 10) {
+              const angle = Cesium.Math.toRadians(i);
+              const x = center.x + radius * Math.cos(angle);
+              const y = center.y + radius * Math.sin(angle);
+              const position = new Cesium.Cartesian3(x, y, center.z + height);
+              const time = Cesium.JulianDate.addSeconds(startTime, (i / 360) * duration, new Cesium.JulianDate());
+              property.addSample(time, position);
+            }
+
+            viewer.camera.setView({
+              destination: property.getValue(startTime),
+              orientation: {
+                heading: 0,
+                pitch: Cesium.Math.toRadians(-30),
+                roll: 0
+              }
+            });
+          }
+        });
+      };
+
+      document.getElementById('stopRoamButton').onclick = function() {
+        roaming = false;
+        viewer.camera.cancelFlight();
+      };
+
+      document.getElementById('clearMeasureButton').onclick = function() {
+        viewer.entities.removeAll();
+        // 重新添加南宁师范大学标记
+        viewer.entities.add({
+          position: nnsyPosition,
+          label: {
+            text: '南宁师范大学',
+            font: '24px sans-serif',
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 2,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -50)
+          },
+          point: {
+            pixelSize: 10,
+            color: Cesium.Color.YELLOW,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 2
+          }
+        });
+        // 重新添加已上传的照片
+        uploadedPhotos.forEach(photo => {
+          if (!viewer.entities.contains(photo.entity)) {
+            viewer.entities.add(photo.entity);
+          }
+        });
+      };
+
+      // 全屏功能
+      document.getElementById('fullscreen-button').addEventListener('click', function() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
+      updatePhotoList();
+    }
+    
+    window.onload = initializeCesium;
+  </script>
+</body>
+</html>

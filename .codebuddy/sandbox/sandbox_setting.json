@@ -1,0 +1,20 @@
+{
+  "path": "c:\\Users\\momo\\Desktop\\专升本作业（2）\\WEBGIS\\大作业\\demo\\6\\end\\simple-cesium",
+  "desc": "Simple Cesium 3D Earth visualization demo with basic globe and marker functionality",
+  "id": "d0d65aafa10f4f668be130f67f380b6b",
+  "data": {
+    "spaceKey": "d0d65aafa10f4f668be130f67f380b6b",
+    "connections": {
+      "webIDE": "https://d0d65aafa10f4f668be130f67f380b6b.ap-singapore.cloudstudio.club",
+      "preview": "",
+      "api": "https://d0d65aafa10f4f668be130f67f380b6b--api.ap-singapore.cloudstudio.club",
+      "pty": "https://d0d65aafa10f4f668be130f67f380b6b--pty.ap-singapore.cloudstudio.club"
+    }
+  },
+  "config": {
+    "api": "https://d0d65aafa10f4f668be130f67f380b6b--api.ap-singapore.cloudstudio.club",
+    "pty": "https://d0d65aafa10f4f668be130f67f380b6b--pty.ap-singapore.cloudstudio.club",
+    "region": "ap-shanghai",
+    "spaceKey": "d0d65aafa10f4f668be130f67f380b6b"
+  }
+}

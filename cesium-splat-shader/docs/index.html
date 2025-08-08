@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cesium照片地理标记系统</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        .app-link { display: block; padding: 15px; margin: 10px 0; background: #3498db; color: white; text-decoration: none; border-radius: 5px; text-align: center; }
+        .app-link:hover { background: #2980b9; }
+        .description { color: #666; margin: 10px 0; }
+        .github-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Cesium照片地理标记系统</h1>
+        
+        <div class="description">
+            <p>基于CesiumJS的3D地球可视化系统，支持照片地理标记、距离测量、模型漫游等功能。</p>
+        </div>
+
+        <div class="github-info">
+            <h3>📋 GitHub Pages 部署说明</h3>
+            <p>此项目已配置自动部署到GitHub Pages。要在GitHub上运行：</p>
+            <ol>
+                <li>将代码推送到GitHub仓库的main分支</li>
+                <li>在仓库设置中启用GitHub Pages</li>
+                <li>GitHub Actions将自动构建和部署</li>
+                <li>访问 <code>https://yourusername.github.io/repository-name/</code></li>
+            </ol>
+        </div>
+
+        <a href="Apps/Sandcastle/standalone.html" class="app-link">
+            📷 启动照片地理标记系统 (GitHub Pages版)
+        </a>
+        
+        <a href="Apps/HelloWorld.html" class="app-link">
+            🌐 Hello World 示例
+        </a>
+
+        <div class="description">
+            <h3>功能特色：</h3>
+            <ul>
+                <li>📸 支持上传带GPS信息的照片并在3D地球上标记</li>
+                <li>📏 距离测量工具</li>
+                <li>🚶 3D场景自动漫游</li>
+                <li>🗺️ 天地图底图集成</li>
+                <li>🏫 南宁师范大学3D模型展示</li>
+            </ul>
+            
+            <h3>技术栈：</h3>
+            <ul>
+                <li>CesiumJS 1.125.0 - 3D地球可视化引擎</li>
+                <li>@cesium/engine - Cesium核心引擎</li>
+                <li>@cesium/widgets - Cesium UI组件</li>
+                <li>天地图API - 中国地图数据服务</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

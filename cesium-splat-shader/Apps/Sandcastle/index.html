@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+  <title>Cesium照片地理标记系统</title>
+  <link rel="icon" type="image/svg+xml" href="images/cesium-logomark.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/cesium-logomark-192.png" />
+  <link rel="apple-touch-icon" href="images/cesium-logomark-192.png" />
+  <link rel="mask-icon" href="images/cesium-logomark.svg" color="rgb(15,98,105)" />
+  <link rel="stylesheet" href="../../Build/CesiumUnminified/Widgets/widgets.css" />
+  <link rel="stylesheet" href="./cesium-measure.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #1a1a2e;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #app-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    #sidebar {
+      width: 250px; /* Reduced width */
+      background-color: #16213e;
+      padding: 15px; /* Reduced padding */
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sidebar h2 {
+      color: #e94560;
+      margin-top: 0;
+    }
+
+    #upload-section,
+    #info-section,
+    #uploaded-photos-section {
+      background-color: #0f3460;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      flex-grow: 1; /* Allow it to grow and take available space */
+      overflow-y: auto; /* Enable vertical scrolling */
+      max-height: 300px; /* Set a max height to enable scrolling */
+    }
+
+    #upload-section h3,
+    #info-section h3,
+    #uploaded-photos-section h3 {
+      color: #ffffff;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    #upload-box {
+      border: 2px dashed #e94560;
+      padding: 15px; /* Reduced padding */
+      text-align: center;
+      margin-bottom: 10px; /* Reduced margin */
+      border-radius: 5px;
+    }
+
+    #upload-box i {
+      font-size: 40px;
+      color: #e94560;
+    }
+
+    #upload-box p {
+      margin: 10px 0;
+    }
+
+    #upload-box button {
+      background-color: #e94560;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #upload-box button:hover {
+      background-color: #ba374d;
+    }
+
+    #info-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #info-section li {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    #info-section li::before {
+      content: '•';
+      color: #e94560;
+      display: inline-block;
+      width: 1em;
+      margin-left: -1em;
+    }
+
+    #main-content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #header {
+      background-color: #16213e;
+      padding: 8px 15px; /* Reduced padding */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #header h1 {
+      margin: 0;
+      font-size: 20px; /* Reduced font size */
+      color: #e94560;
+    }
+
+    #header .user-settings {
+      color: #ffffff;
+    }
+
+    #map-and-controls {
+      flex-grow: 1;
+      display: flex;
+    }
+
+    #controls {
+      width: 180px; /* Reduced width */
+      background-color: #0f3460;
+      padding: 15px; /* Reduced padding */
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #controls button {
+      background-color: #e94560;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    #controls button:hover {
+      background-color: #ba374d;
+    }
+
+    #cesiumContainer {
+      flex-grow: 1;
+      position: relative;
+    }
+
+    #status-bar {
+      background-color: #16213e;
+      padding: 8px 15px; /* Reduced padding */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px; /* Reduced font size */
+    }
+
+    .upload-success-message {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+
+    #fullscreen-button {
+      background-color: #e94560;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    #fullscreen-button:hover {
+      background-color: #c2314b;
+    }
+
+    /* Existing styles for photoLayerManager, etc. */
+    #photoUploadContainer {
+      display: none; /* Hide the old upload container */
+    }
+
+    #photoLayerManagerButton {
+      display: none; /* Hide the old button */
+    }
+
+    #photoLayerManager {
+      display: none; /* Hide the old manager */
+    }
+
+    #measureContainer {
+      display: none; /* Hide the old measure container */
+    }
+
+    /* Add styles for icons if using a library like Font Awesome */
+    .icon {
+      margin-right: 5px;
+    }
+  </style>
+  <script>
+    function convertDMSToDD(dms, ref) {
+      if (!dms || dms.length !== 3) {
+        return NaN;
+      }
+      let degrees = dms[0].numerator / dms[0].denominator;
+      let minutes = dms[1].numerator / dms[1].denominator;
+      let seconds = dms[2].numerator / dms[2].denominator;
+
+      let dd = degrees + (minutes / 60) + (seconds / 3600);
+
+      if (ref === 'S' || ref === 'W') {
+        dd *= -1;
+      }
+      return dd;
+    }
+
+    if (window.location.protocol === "file:") {
+      if (
+        confirm(
+          "You must host this app on a web server.\nSee contributor's guide for more info?"
+        )
+      ) {
+        window.location =
+          "https://github.com/CesiumGS/cesium/blob/main/Documentation/Contributors/BuildGuide/README.md#quickstart";
+      }
+    }
+  </script>
+  <script
+    type="text/javascript"
+    src="../../Build/CesiumUnminified/Cesium.js"
+  ></script>
+  <script src="/Apps/Sandcastle/cesium-measure.js"></script>
+
+</head>
+
+<body>
+  <div id="app-container">
+    <div id="sidebar">
+      <h2>Cesium照片地理标记系统</h2>
+      <div id="upload-section">
+        <h3><i class="icon">↑</i>上传照片</h3>
+        <div id="upload-box">
+          <i class="icon">↑</i>
+          <p>上传带有地理位置的照片</p>
+          <p>支持JPG/PNG格式,最大5MB</p>
+          <button id="selectPhotoButton">选择照片</button>
+          <input type="file" id="photoUploadInput" accept="image/*" multiple style="display: none;" />
+        </div>
+      </div>
+      <div id="info-section">
+        <h3><i class="icon">!</i>重要提示</h3>
+        <ul>
+          <li>请确保照片包含GPS地理位置信息</li>
+          <li>所有照片将在 <span id="photo-lifetime">12小时</span> 后自动删除</li>
+          <li>系统仅保存照片位置信息,不上传原始图片</li>
+        </ul>
+      </div>
+      <div id="uploaded-photos-section">
+        <h3><i class="icon">📷</i>已上传照片</h3>
+        <ul id="photoList"></ul>
+      </div>
+    </div>
+    <div id="main-content">
+      <div id="header">
+            <h1>Cesium Photo Geotagging System</h1>
+            <button id="fullscreen-button" class="control-button">全屏</button>
+          </div>
+      <div id="map-and-controls">
+        <div id="controls">
+          <button id="measureDistanceButton"><i class="icon">📏</i>长度测量</button>
+          <button id="roamButton"><i class="icon">🚶</i>模型漫游</button>
+          <button id="stopRoamButton"><i class="icon">⏹️</i>停止漫游</button>
+          <button id="clearMeasureButton"><i class="icon">🧹</i>清除测量</button>
+        </div>
+        <div id="cesiumContainer">
+          <!-- Cesium map will be initialized here -->
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;">
+            <i class="icon" style="font-size: 60px;">🌍</i>
+            <p>Cesium地图视图</p>
+            <p>实际应用中这里将显示3D地球</p>
+          </div>
+        </div>
+      </div>
+      <div id="status-bar">
+        <div id="system-status"><i class="icon">💻</i>系统状态: 运行中</div>
+        <div id="next-cleanup"><i class="icon">⏰</i>下次清理: <span id="cleanup-time">11小时30分</span></div>
+        <div id="photo-count"><i class="icon">🖼️</i>照片总数: <span id="total-photos">0</span>张</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="uploadMessages" class="upload-success-message" style="display: none;"></div>
+
+  <script>
+    // Existing JavaScript functions (convertDMSToDD, showUploadMessage, initializeCesium, updatePhotoList, removePhoto)
+    const uploadedPhotos = [];
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const PHOTO_LIFETIME_MS = 12 * 60 * 60 * 1000;
+
+    async function initializeCesium() {
+      function showUploadMessage(message, isError = false) {
+        const uploadMessagesElement = document.getElementById('uploadMessages');
+        uploadMessagesElement.textContent = message;
+        uploadMessagesElement.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+        uploadMessagesElement.style.display = 'block';
+        setTimeout(() => {
+          uploadMessagesElement.style.display = 'none';
+        }, 5000);
+      }
+      Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNmRiN2U5Ny1kZDIwLTRkOGQtYmJmZi0xYjk0OWFlNTUxMzEiLCJpZCI6MzAzNDI0LCJpYXQiOjE3NDc1MzQxMzZ9.4AaMdNg3QTb3OeWPJ9pQKM4ARu8UGeJIwfOByXWpTlo'; // 请替换为您的Cesium Ion访问令牌
+      
+      const viewer = new Cesium.Viewer("cesiumContainer");
+      const utcTime = Cesium.JulianDate.now();
+      const chinaTime = Cesium.JulianDate.addHours(
+        utcTime, 
+        8, 
+        new Cesium.JulianDate()
+      );
+      viewer.clock.currentTime = chinaTime;
+      
+      const tileset = await Cesium.Cesium3DTileset.fromUrl(
+        '/Apps/plydata/tileset.json'
+      );
+      viewer.scene.primitives.add(tileset);
+      viewer.scene.globe.depthTestAgainstTerrain = false;
+      viewer.zoomTo(tileset);
+
+      const boundingSphere = tileset.boundingSphere;
+      viewer.entities.add({
+        position: boundingSphere.center,
+        label: {
+          text: '南宁师范大学',
+          font: '24px sans-serif',
+          fillColor: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          pixelOffset: new Cesium.Cartesian2(200, 200)
+        }
+      });
+      
+      const cartographic = Cesium.Cartographic.fromCartesian(
+        boundingSphere.center
+      );
+      const surfacePosition = Cesium.Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        0.0
+      );
+      const offset = Cesium.Cartesian3.fromRadians(
+        cartographic.longitude,
+        cartographic.latitude,
+        -100 // Adjust the height offset as needed
+      );
+      const translation = Cesium.Cartesian3.subtract(
+        offset,
+        surfacePosition,
+        new Cesium.Cartesian3()
+      );
+      tileset.modelMatrix = Cesium.Matrix4.fromTranslation(
+        translation,
+        new Cesium.Matrix4()
+      );
+
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.WebMapTileServiceImageryProvider({
+          url: "http://t0.tianditu.gov.cn/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles&tk=bb51ab049a80598e96bf0684ce21c526",
+          layer: "img",
+          style: "default",
+          format: "tiles",
+          tileMatrixSetID: "w",
+          maximumLevel: 18,
+        })
+      );
+
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.WebMapTileServiceImageryProvider({
+          url: "http://t0.tianditu.gov.cn/cia_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cia&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default.jpg&tk=bb51ab049a80598e96bf0684ce21c526",
+          layer: "cia",
+          style: "default",
+          format: "tiles",
+          tileMatrixSetID: "w",
+          maximumLevel: 18,
+        })
+      );
+      
+      const measure = new CesiumMeasure({
+        container: 'measureContainer',
+        viewer: viewer
+      });
+
+      const photoUploadInput = document.getElementById('photoUploadInput');
+      const selectPhotoButton = document.getElementById('selectPhotoButton'); // Changed ID
+      const photoList = document.getElementById('photoList');
+      const uploadMessagesElement = document.getElementById('uploadMessages'); // Get the new message element
+      const totalPhotosSpan = document.getElementById('total-photos'); // Get the photo count element
+
+      selectPhotoButton.onclick = function () { // Changed button reference
+        photoUploadInput.click();
+      };
+
+      photoUploadInput.onchange = async function (event) {
+        const files = event.target.files;
+        if (files.length === 0) return;
+
+        for (const file of files) {
+          if (file.size > MAX_FILE_SIZE) {
+            showUploadMessage(`文件 ${file.name} 超过5MB限制，无法上传。`, true);
+            continue;
+          }
+
+          try {
+            const exifData = await new Promise((resolve, reject) => {
+              EXIF.getData(file, function () {
+                console.log('EXIF Data:', this);
+                const hasGPS = EXIF.getTag(this, 'GPSLatitude') && EXIF.getTag(this, 'GPSLongitude');
+                console.log('Has GPS Data:', hasGPS);
+                if (hasGPS) {
+                  resolve(this);
+                } else {
+                  reject(new Error('照片不包含地理位置信息。'));
+                }
+              });
+            });
+
+            const latitude = convertDMSToDD(EXIF.getTag(exifData, 'GPSLatitude'), EXIF.getTag(exifData, 'GPSLatitudeRef'));
+            const longitude = convertDMSToDD(EXIF.getTag(exifData, 'GPSLongitude'), EXIF.getTag(exifData, 'GPSLongitudeRef'));
+            const position = Cesium.Cartesian3.fromDegrees(longitude, latitude);
+
+            const photoEntity = viewer.entities.add({
+              position: position,
+              billboard: {
+                image: URL.createObjectURL(file),
+                width: 50,
+                height: 50,
+                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+              },
+              description: `
+                <h3>${file.name}</h3>
+                <img width="200" src="${URL.createObjectURL(file)}" />
+              `,
+            });
+
+
+            const uploadTime = Date.now();
+            uploadedPhotos.push({
+              id: photoEntity.id,
+              name: file.name,
+              uploadTime: uploadTime,
+              entity: photoEntity,
+            });
+            
+            showUploadMessage(`照片 ${file.name} 上传成功！`);
+            updatePhotoList();
+          } catch (error) {
+            showUploadMessage(
+              `上传照片 ${file.name} 失败: ${error.message}`,
+              true
+            );
+          }
+        }
+      };
+
+      function updatePhotoList() {
+        photoList.innerHTML = '';
+        uploadedPhotos.forEach(photo => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span>${photo.name}</span>
+            <button data-id="${photo.id}" class="view-photo">查看</button>
+            <button data-id="${photo.id}" class="remove-photo">删除</button>
+          `;
+          photoList.appendChild(li);
+        });
+
+        photoList.querySelectorAll('.view-photo').forEach(button => {
+          button.onclick = function () {
+            const id = this.dataset.id;
+            const photo = uploadedPhotos.find(p => p.id === id);
+            if (photo) viewer.zoomTo(photo.entity);
+          };
+        });
+
+        photoList.querySelectorAll('.remove-photo').forEach(button => {
+          button.onclick = function () {
+            const id = this.dataset.id;
+            removePhoto(id);
+          };
+        });
+        totalPhotosSpan.textContent = uploadedPhotos.length; // Update photo count
+      }
+
+      function removePhoto(id) {
+        const index = uploadedPhotos.findIndex(photo => photo.id === id);
+        if (index !== -1) {
+          viewer.entities.remove(uploadedPhotos[index].entity);
+          URL.revokeObjectURL(uploadedPhotos[index].entity.billboard.image.getValue());
+          uploadedPhotos.splice(index, 1);
+          updatePhotoList();
+          showUploadMessage('照片已删除。');
+        }
+      }
+
+      setInterval(() => {
+        const now = Date.now();
+        for (let i = uploadedPhotos.length - 1; i >= 0; i--) {
+          if (now - uploadedPhotos[i].uploadTime > PHOTO_LIFETIME_MS) {
+            viewer.entities.remove(uploadedPhotos[i].entity);
+            const removedName = uploadedPhotos[i].name;
+            uploadedPhotos.splice(i, 1);
+            showUploadMessage(`照片 ${removedName} 已过期并自动删除。`);
+          }
+        }
+        updatePhotoList();
+      }, 60 * 60 * 1000);
+
+      // Connect the new UI buttons to existing functionality
+      document.getElementById('measureDistanceButton').onclick = function() { measure.measurePolyline(); };
+      document.getElementById('roamButton').onclick = function() { 
+        const center = tileset.boundingSphere.center;
+        const radius = tileset.boundingSphere.radius * -0.05;
+        const roamPoints = [];
+        const numPoints = 8;
+        const height = boundingSphere.center.z + radius * -3.0;
+
+        for (let i = 0; i < numPoints; i++) {
+          const angle = (i / numPoints) * 2 * Math.PI;
+          const x = boundingSphere.center.x + radius * Math.cos(angle);
+          const y = boundingSphere.center.y + radius * Math.sin(angle);
+          roamPoints.push(new Cesium.Cartesian3(x, y, height));
+        }
+        
+        roamPoints.push(roamPoints[0]);
+        const duration = 60;
+        const times = roamPoints.map((_, i) => (i / roamPoints.length) * duration);
+
+        viewer.camera.flyTo({
+          destination: roamPoints[0],
+          duration: 3, // 飞行时间
+          complete: function () {
+            viewer.camera.flyTo({
+              destination: roamPoints[roamPoints.length - 1],
+              duration: duration,
+              path: new Cesium.CatmullRomSpline({
+                times: times,
+                points: roamPoints,
+              }),
+              orientation: {
+                heading: Cesium.Math.toRadians(0.0),
+                pitch: Cesium.Math.toRadians(-45.0),
+                roll: 0.0,
+              },
+              easingFunction: Cesium.EasingFunction.LINEAR_NONE,
+            });
+          }
+        });
+      };
+      document.getElementById('stopRoamButton').onclick = function() { viewer.camera.cancelFlight(); };
+      document.getElementById('clearMeasureButton').onclick = function() { measure.clear(); };
+
+      // Initial photo list update
+      updatePhotoList();
+    }
+    
+    window.onload = initializeCesium;
+
+    const fullscreenButton = document.getElementById('fullscreen-button');
+    fullscreenButton.addEventListener('click', function() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+  </script>
+</body>
+</html>

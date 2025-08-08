@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Cesium 照片地理标记系统</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <style>
+      body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #ffffff;
+        margin: 0;
+        padding: 40px;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        text-align: center;
+      }
+      h1 {
+        color: #e94560;
+        font-size: 3em;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      }
+      .subtitle {
+        font-size: 1.2em;
+        margin-bottom: 40px;
+        color: #cccccc;
+      }
+      .app-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-top: 40px;
+      }
+      .app-card {
+        background: rgba(15, 52, 96, 0.8);
+        border-radius: 15px;
+        padding: 30px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 2px solid transparent;
+      }
+      .app-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        border-color: #e94560;
+      }
+      .app-card h3 {
+        color: #e94560;
+        font-size: 1.5em;
+        margin-bottom: 15px;
+      }
+      .app-card p {
+        color: #cccccc;
+        line-height: 1.6;
+        margin-bottom: 20px;
+      }
+      .app-link {
+        display: inline-block;
+        background: linear-gradient(45deg, #e94560, #ba374d);
+        color: white;
+        text-decoration: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+      .app-link:hover {
+        background: linear-gradient(45deg, #ba374d, #e94560);
+        transform: scale(1.05);
+      }
+      .features {
+        background: rgba(15, 52, 96, 0.6);
+        border-radius: 15px;
+        padding: 30px;
+        margin: 40px 0;
+      }
+      .features h2 {
+        color: #e94560;
+        margin-bottom: 20px;
+      }
+      .feature-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        text-align: left;
+      }
+      .feature-item {
+        display: flex;
+        align-items: center;
+        color: #cccccc;
+      }
+      .feature-item::before {
+        content: '🌍';
+        margin-right: 10px;
+        font-size: 1.2em;
+      }
+      .tech-stack {
+        margin-top: 40px;
+        padding: 20px;
+        background: rgba(22, 33, 62, 0.8);
+        border-radius: 10px;
+      }
+      .tech-stack h3 {
+        color: #e94560;
+        margin-bottom: 15px;
+      }
+      .tech-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+      }
+      .tech-tag {
+        background: #e94560;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🌍 Cesium 照片地理标记系统</h1>
+      <p class="subtitle">基于CesiumJS的3D地球可视化与照片地理标记平台</p>
+      
+      <div class="features">
+        <h2>✨ 主要功能</h2>
+        <div class="feature-list">
+          <div class="feature-item">3D地球可视化展示</div>
+          <div class="feature-item">照片GPS定位标记</div>
+          <div class="feature-item">距离测量工具</div>
+          <div class="feature-item">3D模型漫游</div>
+          <div class="feature-item">天地图底图集成</div>
+          <div class="feature-item">Splat Shader渲染</div>
+        </div>
+      </div>
+
+      <div class="app-grid">
+        <div class="app-card">
+          <h3>📷 照片地理标记系统</h3>
+          <p>上传带有GPS信息的照片，在3D地球上进行精确定位和可视化展示。支持照片管理、自动清理等功能。</p>
+          <a href="Apps/Sandcastle/index.html" class="app-link">启动应用</a>
+        </div>
+        
+        <div class="app-card">
+          <h3>🏗️ Sandcastle 演示</h3>
+          <p>Cesium官方示例集合，包含各种3D可视化效果、地理数据处理和交互功能的完整演示。</p>
+          <a href="Build/Apps/Sandcastle/index.html" class="app-link">查看演示</a>
+        </div>
+        
+        <div class="app-card">
+          <h3>🌐 Hello World</h3>
+          <p>简单的Cesium入门示例，展示基础的3D地球创建和基本交互功能。</p>
+          <a href="Apps/HelloWorld.html" class="app-link">快速体验</a>
+        </div>
+      </div>
+
+      <div class="tech-stack">
+        <h3>🛠️ 技术栈</h3>
+        <div class="tech-tags">
+          <span class="tech-tag">CesiumJS 1.125.0</span>
+          <span class="tech-tag">WebGL</span>
+          <span class="tech-tag">3D Tiles</span>
+          <span class="tech-tag">WASM Splats</span>
+          <span class="tech-tag">天地图API</span>
+          <span class="tech-tag">EXIF.js</span>
+          <span class="tech-tag">Express.js</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
